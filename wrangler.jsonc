@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "open-seo",
+  "name": "open-seo-rezora",
   "main": "src/server.ts",
   "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
@@ -28,12 +28,12 @@
   // ],
   "workflows": [
     {
-      "name": "site-audit-workflow",
+      "name": "open-seo-rezora-site-audit",
       "binding": "SITE_AUDIT_WORKFLOW",
       "class_name": "SiteAuditWorkflow",
     },
     {
-      "name": "rank-check-workflow",
+      "name": "open-seo-rezora-rank-check",
       "binding": "RANK_CHECK_WORKFLOW",
       "class_name": "RankCheckWorkflow",
     },
@@ -71,46 +71,24 @@
   "kv_namespaces": [
     {
       "binding": "KV",
-      "id": "4abd52f3f2c549ac83cc2cb4ceec8620",
+      "id": "d57b05de9e02419aa601ff5acce692c5",
     },
     {
       "binding": "OAUTH_KV",
-      "id": "bd1759494309474a9b423b029967b0db",
+      "id": "59074ea6a73a43b4a8d2bde35b0597bf",
     },
   ],
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "open-seo",
-      "database_id": "37bee90a-e1aa-404f-b01e-b0d1d479bda1",
+      "database_name": "open-seo-rezora",
+      "database_id": "f7155828-bd63-4176-8418-30dde4fd5e03",
       "migrations_dir": "drizzle",
-    },
-  ],
-  // Postgres scale path. Production runs on Postgres: DATABASE_PROVIDER is set as
-  // a worker *secret* (`wrangler secret put DATABASE_PROVIDER` -> "postgres") so it
-  // survives `wrangler deploy` — which resets plain vars/bindings and is what
-  // reverted prod to the D1 default before. This Hyperdrive binding points the
-  // pooled connection at that Postgres. Hyperdrive is the ONLY way the app
-  // connects to Postgres — there is no direct-connection fallback.
-  //
-  // `localConnectionString` is local-dev only (ignored by `wrangler deploy`):
-  // it's the throwaway Docker Postgres from docs/LOCAL_POSTGRES.md, and nothing
-  // connects to it unless DATABASE_PROVIDER=postgres is set in .env.local.
-  //
-  // SELF-HOSTERS on the free D1 default: DELETE this hyperdrive block before
-  // deploying. The id below lives in OpenSEO's Cloudflare account, so `wrangler
-  // deploy` will fail without access to it. D1 stays the default when
-  // DATABASE_PROVIDER is unset.
-  "hyperdrive": [
-    {
-      "binding": "HYPERDRIVE",
-      "id": "9d64ccfb559f44449ce52a143912f898",
-      "localConnectionString": "postgres://openseo:openseo@localhost:5433/openseo",
     },
   ],
   "r2_buckets": [
     {
-      "bucket_name": "open-seo",
+      "bucket_name": "open-seo-rezora",
       "binding": "R2",
     },
   ],

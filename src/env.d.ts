@@ -16,6 +16,10 @@ declare namespace Cloudflare {
     BYPASS_EMAIL_VERIFICATION?: string;
     TEAM_DOMAIN?: string;
     POLICY_AUD?: string;
+    // Comma-separated Access service-token client ids allowed to act as the
+    // delegate user below (headless MCP clients, e.g. the daily content agent).
+    SERVICE_TOKEN_CLIENT_IDS?: string;
+    SERVICE_TOKEN_DELEGATE_EMAIL?: string;
     POSTHOG_PUBLIC_KEY?: string;
     POSTHOG_HOST?: string;
     BETTER_AUTH_SECRET?: string;

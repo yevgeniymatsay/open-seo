@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import { user } from "@/db/schema";
 import { ensureDelegatedOrganizationForUser } from "@/server/auth/delegated-organization";
+import { AppError } from "@/server/lib/errors";
 import { eq } from "drizzle-orm";
 import type { EnsuredUserContext } from "./types";
 
@@ -73,4 +74,24 @@ export async function resolveDelegatedContext(
 
 export async function resolveLocalNoAuthContext(): Promise<EnsuredUserContext> {
   return resolveDelegatedContext(LOCAL_ADMIN_USER_ID, LOCAL_ADMIN_EMAIL);
+}
+
+// Service tokens act on behalf of an existing delegate user rather than
+// provisioning their own identity, so headless clients share the delegate's
+// organization, projects, and connected integrations. The delegate must have
+// signed in at least once; refusing to auto-create the user here keeps a
+// misconfigured email from silently spawning an empty workspace.
+export async function resolveServiceTokenContext(
+  delegateEmail: string,
+): Promise<EnsuredUserContext> {
+  const delegate = await db.query.user.findFirst({
+    columns: { id: true, email: true },
+    where: eq(user.email, delegateEmail),
+  });
+
+  if (!delegate) {
+    throw new AppError("UNAUTHENTICATED");
+  }
+
+  return resolveDelegatedContext(delegate.id, delegate.email);
 }

@@ -1,7 +1,10 @@
 import { env } from "cloudflare:workers";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { AppError } from "@/server/lib/errors";
-import { resolveDelegatedContext } from "./delegated";
+import {
+  resolveDelegatedContext,
+  resolveServiceTokenContext,
+} from "./delegated";
 import type { EnsuredUserContext } from "./types";
 
 const jwksByTeamDomain = new Map<
@@ -70,14 +73,33 @@ export async function resolveCloudflareAccessContext(
       issuer: teamDomain,
       audience: policyAud,
     });
-    const userId = typeof payload.sub === "string" ? payload.sub : null;
+    const userId =
+      typeof payload.sub === "string" && payload.sub.length > 0
+        ? payload.sub
+        : null;
     const userEmail = typeof payload.email === "string" ? payload.email : null;
 
-    if (!userId || !userEmail) {
-      throw new AppError("UNAUTHENTICATED");
+    if (userId && userEmail) {
+      return resolveDelegatedContext(userId, userEmail);
     }
 
-    return resolveDelegatedContext(userId, userEmail);
+    // Access service tokens (headless clients) present a JWT whose only
+    // identity claim is the token's client id in `common_name`. Only client
+    // ids explicitly allow-listed via SERVICE_TOKEN_CLIENT_IDS may act as the
+    // SERVICE_TOKEN_DELEGATE_EMAIL user; everything else stays rejected.
+    const commonName =
+      typeof payload.common_name === "string" ? payload.common_name : null;
+    const allowedClientIds = (env.SERVICE_TOKEN_CLIENT_IDS ?? "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const delegateEmail = env.SERVICE_TOKEN_DELEGATE_EMAIL?.trim() || null;
+
+    if (commonName && delegateEmail && allowedClientIds.includes(commonName)) {
+      return resolveServiceTokenContext(delegateEmail);
+    }
+
+    throw new AppError("UNAUTHENTICATED");
   } catch (error) {
     if (error instanceof AppError) {
       throw error;
